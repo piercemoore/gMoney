@@ -1,0 +1,172 @@
+<html>
+	<head>
+		<title>Google Calendar</title>
+		<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+
+<script type="text/javascript">
+	
+	google.load("gdata","1");
+	google.setOnLoadCallback(getMyFeed);
+
+	var service;
+	var page;
+	var feedUrl = "https://www.google.com/calendar/feeds/lniumnakfebd5678i0q8rk34qc%40group.calendar.google.com/private-5fe9744bd1d5c7bc811f847d31494ce5/basic?max-results=9999";
+	
+	function setupService() {
+		service = new google.gdata.calendar.CalendarService('pierceCal');
+	}
+	
+	function getMyFeed() {
+		setupService();
+		service.getEventsFeed(feedUrl,listEvents,handleError);
+	}
+	
+	function handleError(e) {
+	  alert("There was an error!");
+	  alert(e.cause ? e.cause.statusText : e.message);
+	}
+	
+	function padNumber(num) {
+	  if (num <= 9) {
+	    return "0" + num;
+	  }
+	  return num;
+	}
+	
+	function addToRunningTotal(num) {
+		var total = $("#total").html();
+		console.log("Current value of total: " + total);
+		//var current = parseFloat($("#total").val());
+		var added = Number(parseInt(num)) + Number(parseInt(total));
+		console.log("Current Math: " + total + " + " + num + " = " + (Number(parseInt(num)) + Number(parseInt(total))));
+		$("#total").html(added);
+	}
+	function addCommas(nStr)
+	{
+		nStr += '';
+		x = nStr.split('.');
+		x1 = x[0];
+		x2 = x.length > 1 ? '.' + x[1] : '';
+		var rgx = /(\d+)(\d{3})/;
+		while (rgx.test(x1)) {
+			x1 = x1.replace(rgx, '$1' + ',' + '$2');
+		}
+		return x1 + x2;
+	}
+
+	
+	function grabDate(dateString) {
+		var fullString = dateString.substring(0,10);
+		var y = dateString.substring(0,4);
+		var m = dateString.substring(5,7);
+		var d = dateString.substring(8,10);
+		var dateObj = {
+			"full": fullString,
+			"parts": {
+				"y":	y,
+				"m":	m,
+				"d":	d
+			}
+		};
+		//console.log(dateObj);
+		return formatDate(dateObj);
+	}
+	
+	function formatDate(obj) {
+		var date = obj.parts.m + "." + obj.parts.d + "." + obj.parts.y;
+		//console.log(date);
+		return date;
+	}
+/**
+ * Callback function for the Google data JS client library to call with a feed 
+ * of events retrieved.
+ *
+ * Creates an unordered list of events in a human-readable form.  This list of
+ * events is added into a div called 'events'.  The title for the calendar is
+ * placed in a div called 'calendarTitle'
+ *
+ * @param {json} feedRoot is the root of the feed, containing all entries 
+ */ 
+function listEvents(feedRoot) {
+  var entries = feedRoot.feed.getEntries();
+  var eventDiv = document.getElementById('content');
+  if (eventDiv.childNodes.length > 0) {
+    eventDiv.removeChild(eventDiv.childNodes[0]);
+  }	  
+  /* create a new unordered list */
+  var ul = document.createElement('ul');
+  /* set the calendarTitle div with the name of the calendar */
+  /* loop through each event in the feed */
+  var len = entries.length;
+  for (var i = 0; i < len; i++) {
+    var entry = entries[i];
+    var title = entry.getTitle().getText();
+	var date = grabDate(entry.published.$t);
+	//var test = testDate(entry.published.$t);
+	//console.log(entry);
+	//console.log(entry.id.$t);
+	//console.log(title);
+	//console.log(date);
+    var entryLinkHref = null;
+    if (entry.getHtmlLink() != null) {
+      entryLinkHref = entry.getHtmlLink().getHref();
+    }
+    var li = document.createElement('li');
+
+    /* if we have a link to the event, create an 'a' element */
+    if (entryLinkHref != null) {
+      entryLink = document.createElement('a');
+      entryLink.setAttribute('href', entryLinkHref);
+      entryLink.appendChild(document.createTextNode(title));
+      li.appendChild(entryLink);
+	  li.appendChild(document.createElement("br"));
+      li.appendChild(document.createTextNode(date));
+    } else {
+      li.appendChild(document.createTextNode(title + ' - ' + date));
+    }	    
+
+    /* append the list item onto the unordered list */
+    ul.appendChild(li);
+	
+	addToRunningTotal(parseFloat(title.substring(1,5)));
+	console.log(parseFloat(title.substring(1,5)));
+  }
+  eventDiv.appendChild(ul);
+	var finalCount = $("#total").html();
+	var formatted = addCommas(finalCount);
+	$("#total").html("$" + formatted);
+}
+
+</script>		
+		<link rel="stylesheet" type="text/css" href="style.css" />
+	</head>
+	<body>
+		<div id="header">
+			<img src="logo.png" alt="gMoney" title="gMoney" />
+		</div>
+		<div id="nav">
+			<ul>
+				<li><a href="#" id="nav_spend">Spend Money</a></li>
+				<li><a href="#" id="nav_track">Track Money</a></li>
+			</ul>
+		<div class="clear"></div>
+		</div>	
+		<div id="box">
+			
+			
+			<div id="spend">
+				This is the "spend" div.
+			</div>
+			<div id="track">
+				This is the "track" div.
+				
+				<h1 id="total">0</h1>
+				
+				<div id="content"></div>
+			</div>
+			
+		<div class="clear"></div>
+		</div>
+	</body>
+</html>
